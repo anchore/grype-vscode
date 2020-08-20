@@ -3,7 +3,8 @@ import path = require("path");
 import fs = require("fs");
 import process = require("process");
 import {https} from 'follow-redirects';
-import tar = require("tar");
+import tar = require("tar-stream");
+import zlib = require('zlib');
 
 function createExtensionStorage(context: vscode.ExtensionContext): string {
 	if (context.globalStoragePath) {
@@ -18,7 +19,7 @@ function createExtensionStorage(context: vscode.ExtensionContext): string {
 	return context.globalStoragePath;
 }
 
-function storeGrypePackage(storagePath: string): string {
+function storeGrypeApp(storagePath: string): string {
 	const grypeVersion = "0.1.0-beta.6";
 	let platform: string;
 	switch (process.platform) {
@@ -34,30 +35,47 @@ function storeGrypePackage(storagePath: string): string {
 			break;
 	}
 
-	const binaryURL = `https://github.com/anchore/grype/releases/download/v${grypeVersion}/grype_${grypeVersion}_${platform}.tar.gz`;
+	const exePath = path.resolve(storagePath, "grype");
+	if (fs.existsSync(exePath)) {
+		return exePath;
+	}
 
-	const destinationPath = path.resolve(storagePath, "archive.tar.gz");
-	const file = fs.createWriteStream(destinationPath);
-	const request = https.get(binaryURL, response => response.pipe(file));
+	const archiveName = `grype_${grypeVersion}_${platform}.tar.gz`
+	const binaryURL = `https://github.com/anchore/grype/releases/download/v${grypeVersion}/${archiveName}`;
+
+	const request = https.get(binaryURL, response => {
+
+		var writeStream = fs.createWriteStream(exePath);
+		var extract = tar.extract();
+
+		extract.on('entry', (header, stream, next) => {
+
+			stream.on('data', (chunk) => {
+				if (header.name === 'grype') {
+					writeStream.write(chunk);
+				}
+			});
+
+			stream.on('end', () => {
+				next();
+			});
+
+			stream.resume();
+		});
+
+		extract.on('finish', () => {
+			writeStream.end();
+			fs.chmodSync(exePath, 0o755);
+		});
+
+		response
+			.pipe(zlib.createGunzip())
+			.pipe(extract);
+
+	});
 	request.on("error", e => console.error(e)); // TODO: What's the best way to handle this?
 
-	return destinationPath;
-}
-
-function untarGrypePackage(tarPath: string, destPath: string) {
-	console.log("tar path:", tarPath)
-	console.log("dest path:", destPath)
-	tar.x(
-		{
-			cwd: destPath,
-			file: tarPath,
-		},
-		// ["grype"],
-	  ).then(_=> {
-		// TODO: there may be some events for error handling we want to listen to
-	});
-
-	return path.resolve(destPath, "grype");
+	return exePath;
 }
 
 // this method is called when your extension is activated
@@ -65,10 +83,10 @@ function untarGrypePackage(tarPath: string, destPath: string) {
 export function activate(context: vscode.ExtensionContext) {
 	// set the extension storage path (create if it does not exist)
 	const storagePath = createExtensionStorage(context);
-	const archivePath = storeGrypePackage(storagePath);
-	const grypeExePath = untarGrypePackage(archivePath, storagePath);
+	const exePath = storeGrypeApp(storagePath);
 
-	console.log('grype extension activated', grypeExePath);
+
+	console.log('grype extension activated');
 
 }
 
