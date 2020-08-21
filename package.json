@@ -2,19 +2,59 @@
 	"name": "grype-vscode",
 	"displayName": "grype-vscode",
 	"publisher": "anchore",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/anchore/grype-vscode.git"
+	},
 	"description": "Scans your project for manifests to discover vulnerable libraries and artifacts.",
 	"version": "0.0.1",
 	"engines": {
 		"vscode": "^1.48.0"
 	},
 	"categories": [
+		"Linters",
 		"Other"
+	],
+	"keywords": [
+		"grype",
+		"vulnerabilities",
+		"vulnerability",
+		"dependency",
+		"dependencies",
+		"scan",
+		"scanner"
 	],
 	"activationEvents": [
 		"*"
 	],
 	"main": "./out/extension.js",
-	"contributes": {},
+	"contributes": {
+		"colors": [
+			{
+				"id": "grype.error",
+				"description": "Status bar color when vulnerabilities are found.",
+				"defaults": {
+					"dark": "#e03207",
+					"light": "#af1400",
+					"highContrast": "#d60101"
+				}
+			}
+		],
+		"commands": [
+			{
+				"command": "extension.scanWorkspace",
+				"title": "Grype: Scan Workspace"
+			},
+			{
+				"command": "extension.enableGrype",
+				"title": "Grype: Enable Scanning"
+			},
+			{
+				"command": "extension.disableGrype",
+				"title": "Grype: Disable Scanning"
+			}
+		]
+	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
 		"compile": "tsc -p ./",
