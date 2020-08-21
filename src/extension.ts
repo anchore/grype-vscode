@@ -4,106 +4,61 @@ import fs = require("fs");
 import { config } from "./config";
 import { ExecutableHandler } from "./ExecutableHandler";
 import { determinePlatform } from './Platform';
-import StatusBar from "./status-bar";
-
+import GrypeExtension from "./GrypeExtension";
 
 function createExtensionStorage(context: vscode.ExtensionContext): string {
-	if (context.globalStoragePath) {
+  if (context.globalStoragePath) {
 
-		const root = path.resolve(context.globalStoragePath, "..");
-		if (!fs.existsSync(root)) {
-			fs.mkdirSync(root);
-		}
-		if (!fs.existsSync(context.globalStoragePath)) {
-			console.log("creating storage path");
-			fs.mkdirSync(context.globalStoragePath);
-		}
-	}
-	return context.globalStoragePath;
+    const root = path.resolve(context.globalStoragePath, "..");
+    if (!fs.existsSync(root)) {
+      fs.mkdirSync(root);
+    }
+    if (!fs.existsSync(context.globalStoragePath)) {
+      console.log("creating storage path");
+      fs.mkdirSync(context.globalStoragePath);
+    }
+  }
+  return context.globalStoragePath;
 }
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-	// set the extension storage path (create if it does not exist)
-	const storagePath = createExtensionStorage(context);
-	const execHandler = new ExecutableHandler(config, storagePath, determinePlatform());
+  // set the extension storage path (create if it does not exist)
+  const storagePath = createExtensionStorage(context);
+  const execHandler = new ExecutableHandler(config, storagePath, determinePlatform());
 
-  	execHandler.storeGrypeApp().then(() => {
-		console.log("grype extension activated");
-	}).catch(
-		console.error
-	);
+	execHandler.storeGrypeApp().then(() => {
+    console.log("grype extension activated");
+  }).catch(
+    console.error
+  );
 
-	const extension: GrypeExtension = new GrypeExtension(context);
-
-	vscode.commands.registerCommand("extension.enableGrype", () => {
-		extension.isEnabled = true;
-		extension.showVulnerabilities(12)
-	});
-
-	vscode.commands.registerCommand("extension.disableGrype", () => {
-		extension.isEnabled = false;
-		extension.showVulnerabilities(0)
-	});
-
-	const watcher: vscode.FileSystemWatcher = vscode.workspace.createFileSystemWatcher("**/*", false, false, false);
-
-	watcher.onDidChange((uri: vscode.Uri) => {
-		extension.eventHandler(uri);
-	});
-
-	console.log('grype extension activated');
-
+  const extension = new GrypeExtension(context);
+  extension.register();
 }
 
 // this method is called when your extension is deactivated
 export function deactivate() {}
 
 
-class GrypeExtension {
-	private _outputChannel: vscode.OutputChannel;
-	private _context: vscode.ExtensionContext;
-	private _statusBar: StatusBar;
+// handler (ensure we have the correct grype and it's downloaded) -> grype class
 
-	constructor(context: vscode.ExtensionContext) {
-		this._context = context;
-		this._outputChannel = vscode.window.createOutputChannel("Grype");
-		this._statusBar = new StatusBar();
-		this.showEnabledState();
-		this._statusBar.showUnknown();
-	}
+class Grype {
+  constructor() {
+  }
 
+  public async version() {
+    // invoke the grype exe and get the current version
+    // calls exec
+  }
 
-	public showEnabledState(): void {
-		this._outputChannel.appendLine(`Grype ${this.isEnabled ? "enabled" : "disabled"}.`);
-	}
+  public async scan(directory: string) {
+    // invoke the grype exe and scan a given directory
+    // resolves the grype exe by downloading or using whats there
+    // calls exec
+  }
 
+  private async exec(cmd: string) {
+  }
 
-	public showOutputMessage(message: string): void {
-		this._outputChannel.appendLine(message);
-	}
-
-
-	public showVulnerabilities(num: number): void {
-		if (num === 0) {
-			this._statusBar.showNoVulnerabilities();
-		} else {
-			this._statusBar.showVulnerabilitiesFound(num);
-		}
-	}
-
-	public eventHandler(documentUri: vscode.Uri): void {
-		console.log("grype file event:", documentUri);
-	}
-
-
-	public get isEnabled(): boolean {
-		return !!this._context.globalState.get("isEnabled", true);
-	}
-	public set isEnabled(value: boolean) {
-		this._context.globalState.update("isEnabled", value);
-		this.showEnabledState();
-	}
 
 }
