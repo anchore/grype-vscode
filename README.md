@@ -31,4 +31,3 @@ Clone this project and launch Visual Studio Code from within it
 Hit F5 to enter debugging mode, which will bring up a new instance of Visual Studio Code.
 
 To trigger the plugin, bring up the command palette (View -> Command Palette...) and search for "grype".
-
