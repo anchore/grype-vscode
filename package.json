@@ -57,7 +57,7 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
+    "compile": "tsc -p ./ --noEmitOnError",
     "lint": "eslint src --ext ts --max-warnings 0",
     "format-check": "prettier --check .",
     "watch": "tsc -watch -p ./",

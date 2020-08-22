@@ -53,11 +53,11 @@ class Grype {
     // calls exec
   }
 
-  public async scan(directory: string) {
-    // invoke the grype exe and scan a given directory
-    // resolves the grype exe by downloading or using whats there
-    // calls exec
-  }
+  // public async scan(directory: string) {
+  //   // invoke the grype exe and scan a given directory
+  //   // resolves the grype exe by downloading or using whats there
+  //   // calls exec
+  // }
 
-  private async exec(cmd: string) {}
+  // private async exec(cmd: string) {}
 }
