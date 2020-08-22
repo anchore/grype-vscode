@@ -7,7 +7,10 @@ export default class StatusBar {
 
   constructor() {
     const priority: number = 1000;
-    this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, priority);
+    this.statusBarItem = vscode.window.createStatusBarItem(
+      vscode.StatusBarAlignment.Left,
+      priority
+    );
     this.errorColor = new vscode.ThemeColor("grype.error");
     this.normalColor = this.statusBarItem.color;
   }
@@ -25,7 +28,7 @@ export default class StatusBar {
   }
 
   public showVulnerabilitiesFound(num: number): void {
-        this.statusBarItem.color = this.errorColor;
+    this.statusBarItem.color = this.errorColor;
     this.statusBarItem.text = `$(alert) ${num} Vulnerabilities`;
     this.statusBarItem.show();
   }

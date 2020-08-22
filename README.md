@@ -6,7 +6,7 @@ For more information about Grype, visit https://toolbox.anchore.io.
 
 ## Requirements
 
-This plugin requires that grype is installed and within $PATH.
+This plugin requires that grype is installed and within \$PATH.
 
 ## Known Issues
 
@@ -15,12 +15,14 @@ This plugin does not yet check to make sure that grype is installed.
 ## Using
 
 Make sure that grype is installed and in your path
+
 ```
 % grype version
 grype v0.9-fictitious
 ```
 
 Clone this project and launch Visual Studio Code from within it
+
 ```
 % git clone git@github.com:anchore/grype-vscode.git
 [...]

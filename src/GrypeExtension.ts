@@ -25,7 +25,12 @@ export default class GrypeExtension {
 
     // create a watcher that uses glob from grype
     // implies we ask grype (syft) for cataloger glob patterns it will use.
-    const watcher = vscode.workspace.createFileSystemWatcher("**/*", false, false, false);
+    const watcher = vscode.workspace.createFileSystemWatcher(
+      "**/*",
+      false,
+      false,
+      false
+    );
 
     watcher.onDidChange((uri: vscode.Uri) => {
       this.handleFileChangeEvent(uri);
@@ -33,7 +38,9 @@ export default class GrypeExtension {
   }
 
   public showEnabledState(): void {
-    this.outputChannel.appendLine(`Grype ${this.isEnabled ? "enabled" : "disabled"}.`);
+    this.outputChannel.appendLine(
+      `Grype ${this.isEnabled ? "enabled" : "disabled"}.`
+    );
   }
 
   public showOutputMessage(message: string): void {
@@ -64,5 +71,4 @@ export default class GrypeExtension {
     this.context.globalState.update("isEnabled", value);
     this.showEnabledState();
   }
-
 }
