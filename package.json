@@ -62,7 +62,8 @@
     "format-check": "prettier --check .",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
-    "test": "node ./out/test/runTest.js"
+    "test-unit": "echo 'modify when unit tests have been added' && exit 0",
+    "test-integration": "node ./out/test/runTest.js"
   },
   "devDependencies": {
     "@types/follow-redirects": "^1.13.0",
