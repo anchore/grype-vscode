@@ -6,7 +6,6 @@
     "lib": ["es6"],
     "sourceMap": true,
     "rootDir": "src",
-    "listFiles": true,
     "strict": true /* enable all strict type-checking options */,
     /* Additional Checks */
     "noImplicitReturns": true /* Report error when not all code paths in function return a value. */,
@@ -14,7 +13,8 @@
     "noUnusedParameters": true /* Report errors on unused parameters. */,
     "noImplicitAny": true,
     "noImplicitThis": true,
-    "allowUnreachableCode": false
+    "allowUnreachableCode": false,
+    "noUnusedLocals": true
   },
   "exclude": ["node_modules", ".vscode-test"]
 }

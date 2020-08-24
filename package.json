@@ -57,11 +57,11 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./ --noEmitOnError",
+    "build": "tsc -p ./ --noEmitOnError",
     "lint": "eslint src --ext ts --max-warnings 0",
     "format-check": "prettier --check .",
     "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
+    "pretest": "npm run build && npm run lint",
     "test-unit": "echo 'modify when unit tests have been added' && exit 0",
     "test-integration": "node ./out/test/runTest.js"
   },

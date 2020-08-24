@@ -1,40 +1,40 @@
-import StatusBar from "./StatusBar";
+import StatusBar from "./ui/StatusBar";
 import * as vscode from "vscode";
+import { Grype } from "./executable/Grype";
+import { ExecutableProvider } from "./executable/ExecutableProvider";
+import { IConfig } from "./config";
+import { Platform } from "./Platform";
+import path = require("path");
+import fs = require("fs");
 
 export default class GrypeExtension {
-  private outputChannel: vscode.OutputChannel;
-  private context: vscode.ExtensionContext;
-  private statusBar: StatusBar;
+  private readonly outputChannel: vscode.OutputChannel;
+  private readonly context: vscode.ExtensionContext;
+  private readonly statusBar: StatusBar;
+  private readonly executableProvider: ExecutableProvider;
+  private grype: Grype | null = null;
 
-  constructor(context: vscode.ExtensionContext) {
+  constructor(
+    context: vscode.ExtensionContext,
+    config: IConfig,
+    platform: Platform
+  ) {
     this.context = context;
     this.outputChannel = vscode.window.createOutputChannel("Grype");
     this.statusBar = new StatusBar();
     this.showEnabledState();
     this.statusBar.showUnknown();
+
+    this.executableProvider = new ExecutableProvider(context, config, platform);
   }
 
-  public register(): void {
-    vscode.commands.registerCommand("extension.enableGrype", () => {
-      this.isEnabled = true;
-    });
+  public async activate() {
+    this.initializeExtensionStorage();
+    this.grype = await this.executableProvider.getGrype();
+    this.register();
 
-    vscode.commands.registerCommand("extension.disableGrype", () => {
-      this.isEnabled = false;
-    });
-
-    // create a watcher that uses glob from grype
-    // implies we ask grype (syft) for cataloger glob patterns it will use.
-    const watcher = vscode.workspace.createFileSystemWatcher(
-      "**/*",
-      false,
-      false,
-      false
-    );
-
-    watcher.onDidChange((uri: vscode.Uri) => {
-      this.handleFileChangeEvent(uri);
-    });
+    // TODO: remove this line
+    console.dir(this.grype);
   }
 
   public showEnabledState(): void {
@@ -70,5 +70,43 @@ export default class GrypeExtension {
   public set isEnabled(value: boolean) {
     this.context.globalState.update("isEnabled", value);
     this.showEnabledState();
+  }
+
+  private register(): void {
+    vscode.commands.registerCommand("extension.enableGrype", () => {
+      this.isEnabled = true;
+    });
+
+    vscode.commands.registerCommand("extension.disableGrype", () => {
+      this.isEnabled = false;
+    });
+
+    // create a watcher that uses glob from grype
+    // implies we ask grype (syft) for cataloger glob patterns it will use.
+    const watcher = vscode.workspace.createFileSystemWatcher(
+      "**/*",
+      false,
+      false,
+      false
+    );
+
+    watcher.onDidChange((uri: vscode.Uri) => {
+      this.handleFileChangeEvent(uri);
+    });
+  }
+
+  private initializeExtensionStorage() {
+    const { globalStoragePath } = this.context;
+
+    const root = path.resolve(globalStoragePath, "..");
+
+    if (!fs.existsSync(root)) {
+      fs.mkdirSync(root);
+    }
+
+    if (!fs.existsSync(globalStoragePath)) {
+      console.log("creating storage path...");
+      fs.mkdirSync(globalStoragePath);
+    }
   }
 }
