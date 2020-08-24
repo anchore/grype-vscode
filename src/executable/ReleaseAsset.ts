@@ -8,9 +8,9 @@ export class ReleaseAsset extends File {
 
   constructor(
     name: string,
+    storageDirectoryPath: string,
     version: string,
-    repositoryURL: string,
-    storageDirectoryPath: string
+    repositoryURL: string
   ) {
     super(name, storageDirectoryPath);
     this.version = version;
@@ -18,6 +18,8 @@ export class ReleaseAsset extends File {
   }
 
   public async download(): Promise<void> {
+    console.log(`downloading ${this.url()}...`);
+
     return new Promise((resolve, reject) => {
       const request = https.get(this.url(), async (response) => {
         const archive = fs.createWriteStream(this.localPath());

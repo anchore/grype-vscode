@@ -25,12 +25,7 @@ export default class GrypeExtension {
     this.showEnabledState();
     this.statusBar.showUnknown();
 
-    this.executableProvider = new ExecutableProvider(
-      context.globalState,
-      config,
-      context.globalStoragePath,
-      platform
-    );
+    this.executableProvider = new ExecutableProvider(context, config, platform);
   }
 
   public async activate() {

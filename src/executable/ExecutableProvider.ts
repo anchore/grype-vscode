@@ -1,8 +1,8 @@
+import * as vscode from "vscode";
 import { IConfig } from "../config";
 import { Platform } from "../Platform";
 import { Grype } from "./Grype";
 import { Verifier } from "./Verifier";
-import { Memento } from "vscode";
 import { ReleaseAsset } from "./ReleaseAsset";
 import { File } from "./File";
 import { DigestMismatchError } from "./DigestMismatchError";
@@ -10,43 +10,39 @@ import { DigestMismatchError } from "./DigestMismatchError";
 export class ExecutableProvider {
   private static readonly executableName = "grype";
 
-  private readonly globalState: Memento;
+  private readonly context: vscode.ExtensionContext;
   private readonly config: IConfig;
-  private readonly storageDirectoryPath: string;
   private readonly platform: Platform;
   private readonly archiveFile: ReleaseAsset;
   private readonly executableFile: File;
 
   constructor(
-    globalState: Memento,
+    context: vscode.ExtensionContext,
     config: IConfig,
-    storageDirectoryPath: string,
     platform: Platform
   ) {
-    this.globalState = globalState;
+    this.context = context;
     this.config = config;
-    this.storageDirectoryPath = storageDirectoryPath;
     this.platform = platform;
 
     const { requiredVersion, repositoryURL } = config.grype;
     this.archiveFile = new ReleaseAsset(
       `grype_${requiredVersion}_${platform}.tar.gz`,
+      context.globalStoragePath,
       requiredVersion,
-      repositoryURL,
-      storageDirectoryPath
+      repositoryURL
     );
     this.executableFile = new File(
       ExecutableProvider.executableName,
-      storageDirectoryPath
+      context.globalStoragePath
     );
   }
 
   public async getGrype(): Promise<Grype> {
     const verifier = new Verifier(
-      this.globalState,
+      this.context,
       this.config,
       this.platform,
-      this.storageDirectoryPath,
       this.archiveFile,
       this.executableFile
     );
@@ -55,16 +51,12 @@ export class ExecutableProvider {
     if (this.executableFile.exists()) {
       console.log("found grype executable");
       try {
-        console.log("verifying grype executable...");
         await verifier.verifyExecutable(this.executableFile);
 
         return this.newGrype();
       } catch (err) {
         if (err instanceof DigestMismatchError) {
-          console.log(err.message);
-          console.log(
-            "grype executable has incorrect contents; removing file..."
-          );
+          console.log("grype executable has incorrect digest");
           this.executableFile.remove();
         } else {
           throw err;

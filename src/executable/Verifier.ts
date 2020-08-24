@@ -1,3 +1,4 @@
+import * as vscode from "vscode";
 import crypto = require("crypto");
 import tar = require("tar");
 import { IConfig } from "../config";
@@ -20,25 +21,24 @@ export class Verifier {
   private readonly grypeExecutableFile: File;
 
   constructor(
-    globalState: Memento,
+    context: vscode.ExtensionContext,
     config: IConfig,
     platform: Platform,
-    storageDirectoryPath: string,
     archiveFile: ReleaseAsset,
     grypeExecutableFile: File
   ) {
     const { requiredVersion, repositoryURL } = config.grype;
 
-    this.globalState = globalState;
+    this.globalState = context.globalState;
     this.platform = platform;
-    this.storageDirectoryPath = storageDirectoryPath;
+    this.storageDirectoryPath = context.globalStoragePath;
     this.requiredVersion = requiredVersion;
 
     this.checksumsFile = new ReleaseAsset(
       `grype_${requiredVersion}_checksums.txt`,
+      this.storageDirectoryPath,
       requiredVersion,
-      repositoryURL,
-      this.storageDirectoryPath
+      repositoryURL
     );
 
     this.archiveFile = archiveFile;
@@ -53,36 +53,15 @@ export class Verifier {
   public async downloadAndVerifyExecutable(
     executableName: string
   ): Promise<string> {
-    console.log("downlading checksums file...");
     await this.checksumsFile.download();
-
-    console.log("downloading grype archive...");
     await this.archiveFile.download();
-
-    console.log("verifying archive...");
     await this.verifyArchive(this.archiveFile);
-
-    console.log("removing checksums file...");
     this.checksumsFile.remove();
-
-    console.log("extracting file from archive...");
-    await tar.extract(
-      {
-        file: this.archiveFile.localPath(),
-        cwd: this.storageDirectoryPath,
-      },
-      [executableName]
-    );
-
-    console.log("removing grype archive...");
+    await this.extractExecutable(executableName);
     this.archiveFile.remove();
 
     const executableDigest = await Verifier.digest(this.grypeExecutableFile);
-
-    await this.globalState.update(Verifier.requiredVersionDigestKey, {
-      version: this.requiredVersion,
-      digest: executableDigest,
-    } as VersionDigest);
+    await this.storeExecutableDigest(this.requiredVersion, executableDigest);
 
     return executableDigest;
   }
@@ -94,14 +73,32 @@ export class Verifier {
     return hash.digest("hex");
   }
 
+  private async storeExecutableDigest(
+    version: string,
+    digest: string
+  ): Promise<void> {
+    console.log(
+      `saving new digest for executable (version: ${version}, digest: "${digest.substring(
+        0,
+        8
+      )}…")...`
+    );
+
+    await this.globalState.update(Verifier.requiredVersionDigestKey, {
+      version,
+      digest,
+    } as VersionDigest);
+  }
+
   private async verifyArchive(archive: File): Promise<void> {
     const requiredDigest = await this.requiredArchiveDigest();
     await this.verifyFile(archive, requiredDigest);
   }
 
   private async verifyFile(file: File, requiredDigest: string): Promise<void> {
-    const actualDigest = await Verifier.digest(file);
+    console.log(`verifying ${file.name}...`);
 
+    const actualDigest = await Verifier.digest(file);
     if (actualDigest === requiredDigest) {
       return;
     }
@@ -114,6 +111,20 @@ export class Verifier {
     );
   }
 
+  private async extractExecutable(executableName: string): Promise<void> {
+    console.log(
+      `extracting "${executableName}" from "${this.archiveFile.name}"...`
+    );
+
+    await tar.extract(
+      {
+        file: this.archiveFile.localPath(),
+        cwd: this.storageDirectoryPath,
+      },
+      [executableName]
+    );
+  }
+
   private async requiredExecutableDigest(): Promise<string> {
     const requiredDigest = this.requiredExecutableDigestFromGlobalStore();
 
@@ -121,7 +132,7 @@ export class Verifier {
       return requiredDigest;
     }
 
-    return this.downloadAndVerifyExecutable("grype");
+    return this.downloadAndVerifyExecutable(this.grypeExecutableFile.name);
   }
 
   private requiredExecutableDigestFromGlobalStore(): string | null {

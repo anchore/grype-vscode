@@ -15,6 +15,7 @@ export class File {
   }
 
   public remove(): void {
+    console.log(`removing ${this.name}...`);
     fs.unlinkSync(this.localPath());
   }
 
