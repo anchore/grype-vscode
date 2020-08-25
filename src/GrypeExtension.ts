@@ -73,12 +73,28 @@ export default class GrypeExtension {
   }
 
   private register(): void {
-    vscode.commands.registerCommand("extension.enableGrype", () => {
-      this.isEnabled = true;
+    vscode.commands.registerCommand("extension.enableGrypeWorkspace", () => {
+      console.log("todo");
     });
 
-    vscode.commands.registerCommand("extension.disableGrype", () => {
-      this.isEnabled = false;
+    vscode.commands.registerCommand("extension.disableGrypeWorkspace", () => {
+      console.log("todo");
+    });
+
+    vscode.commands.registerCommand("extension.enableGrypeGlobally", () => {
+      console.log("todo");
+    });
+
+    vscode.commands.registerCommand("extension.disableGrypeGlobally", () => {
+      console.log("todo");
+    });
+
+    vscode.commands.registerCommand("extension.scanWorkspace", async () => {
+      const root = vscode.workspace.rootPath;
+      if (root !== undefined) {
+        const result = await this.grype?.scan(root!);
+        console.dir(result);
+      }
     });
 
     // create a watcher that uses glob from grype
