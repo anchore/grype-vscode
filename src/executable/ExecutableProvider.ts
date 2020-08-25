@@ -75,6 +75,9 @@ export class ExecutableProvider {
   }
 
   private newGrype(): Grype {
-    return new Grype(this.executableFile.localPath());
+    return new Grype(
+      this.executableFile.localPath(),
+      this.context.globalStoragePath
+    );
   }
 }
