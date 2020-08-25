@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'unsafe-eval'; script-src-elem 'nonce-[[nonce]]'; style-src vscode-resource: https://cdn.jsdelivr.net/; font-src data: https:;"
+    />
+    <link
+      nonce="[[nonce]]"
+      rel="stylesheet"
+      href="[[ui]]/webview-assets/DetailsView.css"
+    />
+    <link
+      nonce="[[nonce]]"
+      rel="stylesheet"
+      href="[[ui]]/webview-assets/SemanticUIIcons.css"
+    />
+    <link
+      nonce="[[nonce]]"
+      rel="stylesheet"
+      href="[[ui]]/webview-assets/SemanticUITable.css"
+    />
+  </head>
+  <body>
+    <div id="main"></div>
+    <script nonce="[[nonce]]" src="[[bundle]]/main.js"></script>
+  </body>
+</html>
