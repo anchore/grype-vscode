@@ -4,6 +4,7 @@ import { Grype } from "./executable/Grype";
 import { ExecutableProvider } from "./executable/ExecutableProvider";
 import { IConfig } from "./config";
 import { Platform } from "./Platform";
+import { WorkspaceFileWatcher } from "./WorkspaceFileWatcher";
 import path = require("path");
 import fs = require("fs");
 
@@ -13,6 +14,7 @@ export default class GrypeExtension {
   private readonly statusBar: StatusBar;
   private readonly executableProvider: ExecutableProvider;
   private grype: Grype | null = null;
+  private watcher: WorkspaceFileWatcher | null = null;
 
   constructor(
     context: vscode.ExtensionContext,
@@ -22,98 +24,45 @@ export default class GrypeExtension {
     this.context = context;
     this.outputChannel = vscode.window.createOutputChannel("Grype");
     this.statusBar = new StatusBar();
-    this.showEnabledState();
-    this.statusBar.showUnknown();
-
+    this.statusBar.hide();
     this.executableProvider = new ExecutableProvider(context, config, platform);
   }
 
   public async activate() {
     this.initializeExtensionStorage();
     this.grype = await this.executableProvider.getGrype();
+
+    const patterns = await this.grype?.globPatterns();
+    this.watcher = new WorkspaceFileWatcher(patterns, () => {
+      this.scanWorkspace();
+    });
+
     this.register();
-
-    // TODO: remove this line
-    console.dir(this.grype);
-  }
-
-  public showEnabledState(): void {
-    this.outputChannel.appendLine(
-      `Grype ${this.isEnabled ? "enabled" : "disabled"}.`
-    );
+    this.conditionallyStartWatchers();
   }
 
   public showOutputMessage(message: string): void {
     this.outputChannel.appendLine(message);
   }
 
-  public showVulnerabilities(num: number): void {
-    if (num === 0) {
-      this.statusBar.showNoVulnerabilities();
-    } else {
-      this.statusBar.showVulnerabilitiesFound(num);
-    }
+  public get isWorkspaceEnabled(): boolean {
+    return this.context.workspaceState.get<boolean>("isWorkspaceEnabled", true);
   }
 
-  public handleFileChangeEvent(documentUri: vscode.Uri): void {
-    console.log("grype file event:", documentUri);
-    // low-pass event filter
-    //    -
-    // invoking grype.scan()
-    // updating UI with results
+  public set isWorkspaceEnabled(value: boolean) {
+    this.context.workspaceState.update("isWorkspaceEnabled", value);
   }
 
-  public get isEnabled(): boolean {
-    return !!this.context.globalState.get("isEnabled", true);
+  public get isGloballyEnabled(): boolean {
+    return this.context.globalState.get<boolean>("isGloballyEnabled", true);
   }
 
-  public set isEnabled(value: boolean) {
-    this.context.globalState.update("isEnabled", value);
-    this.showEnabledState();
-  }
-
-  private register(): void {
-    vscode.commands.registerCommand("extension.enableGrypeWorkspace", () => {
-      console.log("todo");
-    });
-
-    vscode.commands.registerCommand("extension.disableGrypeWorkspace", () => {
-      console.log("todo");
-    });
-
-    vscode.commands.registerCommand("extension.enableGrypeGlobally", () => {
-      console.log("todo");
-    });
-
-    vscode.commands.registerCommand("extension.disableGrypeGlobally", () => {
-      console.log("todo");
-    });
-
-    vscode.commands.registerCommand("extension.scanWorkspace", async () => {
-      const root = vscode.workspace.rootPath;
-      if (root !== undefined) {
-        const result = await this.grype?.scan(root!);
-        console.dir(result);
-      }
-    });
-
-    // create a watcher that uses glob from grype
-    // implies we ask grype (syft) for cataloger glob patterns it will use.
-    const watcher = vscode.workspace.createFileSystemWatcher(
-      "**/*",
-      false,
-      false,
-      false
-    );
-
-    watcher.onDidChange((uri: vscode.Uri) => {
-      this.handleFileChangeEvent(uri);
-    });
+  public set isGloballyEnabled(value: boolean) {
+    this.context.globalState.update("isGloballyEnabled", value);
   }
 
   private initializeExtensionStorage() {
     const { globalStoragePath } = this.context;
-
     const root = path.resolve(globalStoragePath, "..");
 
     if (!fs.existsSync(root)) {
@@ -121,8 +70,67 @@ export default class GrypeExtension {
     }
 
     if (!fs.existsSync(globalStoragePath)) {
-      console.log("creating storage path...");
       fs.mkdirSync(globalStoragePath);
+    }
+  }
+
+  private register(): void {
+    vscode.commands.registerCommand("extension.enableGrypeWorkspace", () => {
+      this.isWorkspaceEnabled = true;
+      this.conditionallyStartWatchers();
+    });
+
+    vscode.commands.registerCommand("extension.disableGrypeWorkspace", () => {
+      this.isWorkspaceEnabled = false;
+      this.watcher?.stop();
+    });
+
+    vscode.commands.registerCommand("extension.enableGrypeGlobally", () => {
+      this.isGloballyEnabled = true;
+      this.conditionallyStartWatchers();
+    });
+
+    vscode.commands.registerCommand("extension.disableGrypeGlobally", () => {
+      this.isGloballyEnabled = false;
+      this.watcher?.stop();
+    });
+
+    vscode.commands.registerCommand("extension.scanWorkspace", () => {
+      this.scanWorkspace();
+    });
+  }
+
+  private conditionallyStartWatchers() {
+    // we want to automatically trigger scans for any file event in the workspace automatically
+    // only if this workspace is explicitly enabled and overall globally enabled
+    if (this.isGloballyEnabled && this.isWorkspaceEnabled) {
+      // perform an initial scan on startup
+      this.scanWorkspace();
+
+      // watch for changes and trigger a rescan
+      this.watcher?.start();
+    }
+  }
+
+  private async scanWorkspace() {
+    const root = vscode.workspace.rootPath;
+    if (root === undefined) {
+      console.error("no workspace path defined");
+    }
+
+    this.statusBar.showScanning();
+
+    const result = await this.grype?.scan(root!);
+    // TODO: update UI with results
+    console.dir(result);
+
+    // update the status bar
+    if (result !== undefined) {
+      if (result!.length === 0) {
+        this.statusBar.showNoVulnerabilities();
+      } else {
+        this.statusBar.showVulnerabilitiesFound(result!.length);
+      }
     }
   }
 }
