@@ -3,7 +3,7 @@ import fs = require("fs");
 import path = require("path");
 import { IGrypeFinding } from "../IGrypeFinding";
 
-interface IProcessResult {
+export interface IProcessResult {
   stdout: string;
   stderr: string;
 }

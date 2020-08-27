@@ -1,7 +1,9 @@
 import StatusBar from "./ui/StatusBar";
+import VulnerabilityCodeLensProvider from "./ui/VulnerabilityCodeLensProvider";
 import * as vscode from "vscode";
 import { Grype } from "./executable/Grype";
 import { ExecutableProvider } from "./executable/ExecutableProvider";
+import { IGrypeFinding } from "./IGrypeFinding";
 import { IConfig } from "./config";
 import { Platform } from "./Platform";
 import { WorkspaceFileWatcher } from "./WorkspaceFileWatcher";
@@ -17,6 +19,8 @@ export default class GrypeExtension {
   private readonly detailsView: DetailsView;
   private grype: Grype | null = null;
   private watcher: WorkspaceFileWatcher | null = null;
+  private registeredCodeLenseProvider: vscode.Disposable | null = null;
+  private scanReport: IGrypeFinding[] | null = null;
 
   constructor(
     context: vscode.ExtensionContext,
@@ -41,7 +45,7 @@ export default class GrypeExtension {
       this.scanWorkspace.bind(this)
     );
 
-    this.register();
+    this.registerCommands();
     this.conditionallyStartWatchers();
   }
 
@@ -78,30 +82,46 @@ export default class GrypeExtension {
     }
   }
 
-  private register(): void {
-    vscode.commands.registerCommand("extension.enableGrypeWorkspace", () => {
-      this.isWorkspaceEnabled = true;
-      this.conditionallyStartWatchers();
-    });
+  private registerCommands(): void {
+    // register all commands, use a subscription to ensure it is de-registered
+    // upon the extension being unloaded
+    this.context.subscriptions.push(
+      vscode.commands.registerCommand("extension.enableGrypeWorkspace", () => {
+        this.isWorkspaceEnabled = true;
+        this.conditionallyStartWatchers();
+      }),
 
-    vscode.commands.registerCommand("extension.disableGrypeWorkspace", () => {
-      this.isWorkspaceEnabled = false;
-      this.watcher?.stop();
-    });
+      vscode.commands.registerCommand("extension.showReport", () => {
+        if (this.scanReport) {
+          // TODO: Remove this whole try/catch block when we have popups in place (w/ "Details" button)
+          try {
+            this.detailsView.open();
+            this.detailsView.loadFindings(this.scanReport);
+          } catch (err) {
+            console.error(err);
+          }
+        }
+      }),
 
-    vscode.commands.registerCommand("extension.enableGrypeGlobally", () => {
-      this.isGloballyEnabled = true;
-      this.conditionallyStartWatchers();
-    });
+      vscode.commands.registerCommand("extension.disableGrypeWorkspace", () => {
+        this.isWorkspaceEnabled = false;
+        this.watcher?.stop();
+      }),
 
-    vscode.commands.registerCommand("extension.disableGrypeGlobally", () => {
-      this.isGloballyEnabled = false;
-      this.watcher?.stop();
-    });
+      vscode.commands.registerCommand("extension.enableGrypeGlobally", () => {
+        this.isGloballyEnabled = true;
+        this.conditionallyStartWatchers();
+      }),
 
-    vscode.commands.registerCommand("extension.scanWorkspace", async () => {
-      await this.scanWorkspace();
-    });
+      vscode.commands.registerCommand("extension.disableGrypeGlobally", () => {
+        this.isGloballyEnabled = false;
+        this.watcher?.stop();
+      }),
+
+      vscode.commands.registerCommand("extension.scanWorkspace", () => {
+        this.scanWorkspace();
+      })
+    );
   }
 
   private conditionallyStartWatchers(): void {
@@ -116,6 +136,27 @@ export default class GrypeExtension {
     }
   }
 
+  private registerCodeLenseProvider(results: IGrypeFinding[]): void {
+    if (this.registeredCodeLenseProvider !== null) {
+      // ensure any code lenses with old results are no longer used
+      this.registeredCodeLenseProvider.dispose();
+    }
+
+    const docSelector = {
+      scheme: "file",
+    };
+
+    const disposable = vscode.languages.registerCodeLensProvider(
+      docSelector,
+      new VulnerabilityCodeLensProvider(results)
+    );
+
+    this.registeredCodeLenseProvider = disposable;
+
+    // use a subscription to ensure the provider is de-registered upon the extension being unloaded
+    this.context.subscriptions.push(disposable);
+  }
+
   private async scanWorkspace(): Promise<void> {
     const root = vscode.workspace.rootPath;
     if (!root) {
@@ -127,24 +168,19 @@ export default class GrypeExtension {
       this.statusBar.showScanning();
 
       // TODO: Catch errors and notify user of unsuccessful scan somehow
-      const result = await this.grype.scan(root);
-
-      // TODO: Remove this whole try/catch block when we have popups in place (w/ "Details" button)
-      try {
-        this.detailsView.open();
-        this.detailsView.loadFindings(result);
-      } catch (err) {
-        console.error(err);
-      }
+      this.scanReport = await this.grype.scan(root);
 
       // update the status bar
-      if (result) {
-        if (result.length === 0) {
+      if (this.scanReport) {
+        if (this.scanReport.length === 0) {
           this.statusBar.showNoVulnerabilities();
         } else {
-          this.statusBar.showVulnerabilitiesFound(result.length);
+          this.statusBar.showVulnerabilitiesFound(this.scanReport.length);
         }
       }
+
+      // update all top-of-file lines for files that are in the scan results
+      this.registerCodeLenseProvider(this.scanReport);
     }
   }
 }
