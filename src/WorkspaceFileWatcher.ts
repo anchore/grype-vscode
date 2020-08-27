@@ -4,24 +4,24 @@ import { setTimeout } from "timers";
 export class WorkspaceFileWatcher {
   private watchers: Array<vscode.FileSystemWatcher> = [];
   private scheduled: boolean;
-  private readonly callback: Function;
+  private readonly callback: () => Promise<void>;
   private readonly patterns: Array<string>;
 
-  constructor(patterns: Array<string>, callback: Function) {
+  constructor(patterns: Array<string>, callback: () => Promise<void>) {
     this.scheduled = false;
     this.callback = callback;
     this.patterns = patterns;
   }
 
-  public stop() {
+  public stop(): void {
     console.log(`stop listening`);
-    for (let watcher of this.watchers) {
+    this.watchers.forEach((watcher) => {
       watcher.dispose();
-    }
+    });
     this.watchers = [];
   }
 
-  public start() {
+  public start(): void {
     // don't enable watchers if we are already watching
     if (this.watchers.length > 0) {
       return;
@@ -32,7 +32,7 @@ export class WorkspaceFileWatcher {
     };
 
     // create a watcher that uses glob patterns from grype
-    for (let pattern of this.patterns) {
+    const watchers = this.patterns.map((pattern) => {
       console.log(`listening for file events: ${pattern}`);
 
       const watcher = vscode.workspace.createFileSystemWatcher(
@@ -42,12 +42,14 @@ export class WorkspaceFileWatcher {
         false // listen to delete events
       );
 
-      this.watchers.push(watcher);
-
       watcher.onDidCreate(handler);
       watcher.onDidChange(handler);
       watcher.onDidDelete(handler);
-    }
+
+      return watcher;
+    });
+
+    this.watchers.push(...watchers);
   }
 
   private handleFileEvent(documentUri: vscode.Uri): void {
@@ -55,7 +57,7 @@ export class WorkspaceFileWatcher {
     this.schedule();
   }
 
-  private schedule() {
+  private schedule(): void {
     if (!this.scheduled) {
       this.scheduled = true;
       // delay for one second before allowing a scan, allowing multiple events to attempt to schedule a run.

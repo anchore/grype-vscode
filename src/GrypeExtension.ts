@@ -33,9 +33,10 @@ export default class GrypeExtension {
     this.grype = await this.executableProvider.getGrype();
 
     const patterns = await this.grype?.globPatterns();
-    this.watcher = new WorkspaceFileWatcher(patterns, () => {
-      this.scanWorkspace();
-    });
+    this.watcher = new WorkspaceFileWatcher(
+      patterns,
+      this.scanWorkspace.bind(this)
+    );
 
     this.register();
     this.conditionallyStartWatchers();
@@ -61,7 +62,7 @@ export default class GrypeExtension {
     this.context.globalState.update("isGloballyEnabled", value);
   }
 
-  private initializeExtensionStorage() {
+  private initializeExtensionStorage(): void {
     const { globalStoragePath } = this.context;
     const root = path.resolve(globalStoragePath, "..");
 
@@ -100,7 +101,7 @@ export default class GrypeExtension {
     });
   }
 
-  private conditionallyStartWatchers() {
+  private conditionallyStartWatchers(): void {
     // we want to automatically trigger scans for any file event in the workspace automatically
     // only if this workspace is explicitly enabled and overall globally enabled
     if (this.isGloballyEnabled && this.isWorkspaceEnabled) {
@@ -112,7 +113,7 @@ export default class GrypeExtension {
     }
   }
 
-  private async scanWorkspace() {
+  private async scanWorkspace(): Promise<void> {
     const root = vscode.workspace.rootPath;
     if (root === undefined) {
       console.error("no workspace path defined");

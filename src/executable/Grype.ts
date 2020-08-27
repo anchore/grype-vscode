@@ -2,8 +2,6 @@ import { spawn } from "child_process";
 import fs = require("fs");
 import path = require("path");
 
-interface IGrypeReport extends Array<IGrypeReportElement> {}
-
 interface IGrypeReportElement {
   vulnerability: IVulnerability;
   "matched-by": Array<string>;
@@ -11,11 +9,9 @@ interface IGrypeReportElement {
 }
 
 interface IVulnerability {
-  [index: number]: {
-    id: string;
-    severity: string;
-    links: Array<string>;
-  };
+  id: string;
+  severity: string;
+  links: Array<string>;
 }
 
 interface IArtifact {
@@ -77,7 +73,7 @@ export class Grype {
     ];
   }
 
-  public async scan(directory: string): Promise<IGrypeReport> {
+  public async scan(directory: string): Promise<Array<IGrypeReportElement>> {
     console.log("scanning...");
     try {
       await this.updateDb();
@@ -88,7 +84,7 @@ export class Grype {
         "json",
         "-v"
       );
-      const grypeReport: IGrypeReport = JSON.parse(result.stdout);
+      const grypeReport: Array<IGrypeReportElement> = JSON.parse(result.stdout);
       return grypeReport;
     } catch (err) {
       throw err;
