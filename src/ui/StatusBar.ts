@@ -15,7 +15,11 @@ export default class StatusBar {
     this.normalColor = this.statusBarItem.color;
   }
 
-  public showUnknown(): void {
+  public hide(): void {
+    this.statusBarItem.hide();
+  }
+
+  public showScanning(): void {
     this.statusBarItem.color = this.normalColor;
     this.statusBarItem.text = "$(question) Scanning...";
     this.statusBarItem.show();

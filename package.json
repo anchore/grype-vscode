@@ -29,19 +29,16 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
-    "colors": [
-      {
-        "id": "grype.error",
-        "description": "Status bar color when vulnerabilities are found.",
-        "defaults": {
-          "dark": "#e03207",
-          "light": "#af1400",
-          "highContrast": "#d60101"
-        }
+    "colors": [{
+      "id": "grype.error",
+      "description": "Status bar color when vulnerabilities are found.",
+      "defaults": {
+        "dark": "#e03207",
+        "light": "#af1400",
+        "highContrast": "#d60101"
       }
-    ],
-    "commands": [
-      {
+    }],
+    "commands": [{
         "command": "extension.scanWorkspace",
         "title": "Grype: Scan Workspace"
       },
@@ -55,11 +52,11 @@
       },
       {
         "command": "extension.enableGrypeWorkspace",
-        "title": "Grype: Enable auto scanning for workspace"
+        "title": "Grype: Enable auto scanning for this workspace"
       },
       {
         "command": "extension.disableGrypeWorkspace",
-        "title": "Grype: Disable auto scanning for workspace"
+        "title": "Grype: Disable auto scanning for this workspace"
       }
     ]
   },
