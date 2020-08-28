@@ -7,12 +7,14 @@ import { Platform } from "./Platform";
 import { WorkspaceFileWatcher } from "./WorkspaceFileWatcher";
 import path = require("path");
 import fs = require("fs");
+import { DetailsView } from "./ui/DetailsView";
 
 export default class GrypeExtension {
   private readonly outputChannel: vscode.OutputChannel;
   private readonly context: vscode.ExtensionContext;
   private readonly statusBar: StatusBar;
   private readonly executableProvider: ExecutableProvider;
+  private readonly detailsView: DetailsView;
   private grype: Grype | null = null;
   private watcher: WorkspaceFileWatcher | null = null;
 
@@ -26,9 +28,10 @@ export default class GrypeExtension {
     this.statusBar = new StatusBar();
     this.statusBar.hide();
     this.executableProvider = new ExecutableProvider(context, config, platform);
+    this.detailsView = new DetailsView(context);
   }
 
-  public async activate() {
+  public async activate(): Promise<void> {
     this.initializeExtensionStorage();
     this.grype = await this.executableProvider.getGrype();
 
@@ -96,8 +99,8 @@ export default class GrypeExtension {
       this.watcher?.stop();
     });
 
-    vscode.commands.registerCommand("extension.scanWorkspace", () => {
-      this.scanWorkspace();
+    vscode.commands.registerCommand("extension.scanWorkspace", async () => {
+      await this.scanWorkspace();
     });
   }
 
@@ -115,22 +118,32 @@ export default class GrypeExtension {
 
   private async scanWorkspace(): Promise<void> {
     const root = vscode.workspace.rootPath;
-    if (root === undefined) {
+    if (!root) {
       console.error("no workspace path defined");
+      return;
     }
 
-    this.statusBar.showScanning();
+    if (this.grype) {
+      this.statusBar.showScanning();
 
-    const result = await this.grype?.scan(root!);
-    // TODO: update UI with results
-    console.dir(result);
+      // TODO: Catch errors and notify user of unsuccessful scan somehow
+      const result = await this.grype.scan(root);
 
-    // update the status bar
-    if (result !== undefined) {
-      if (result!.length === 0) {
-        this.statusBar.showNoVulnerabilities();
-      } else {
-        this.statusBar.showVulnerabilitiesFound(result!.length);
+      // TODO: Remove this whole try/catch block when we have popups in place (w/ "Details" button)
+      try {
+        this.detailsView.open();
+        this.detailsView.loadFindings(result);
+      } catch (err) {
+        console.error(err);
+      }
+
+      // update the status bar
+      if (result) {
+        if (result.length === 0) {
+          this.statusBar.showNoVulnerabilities();
+        } else {
+          this.statusBar.showVulnerabilitiesFound(result.length);
+        }
       }
     }
   }

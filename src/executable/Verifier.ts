@@ -4,7 +4,7 @@ import tar = require("tar");
 import { IConfig } from "../config";
 import { Platform } from "../Platform";
 import { Memento } from "vscode";
-import { VersionDigest } from "./VersionDigest";
+import { IVersionDigest } from "./IVersionDigest";
 import { ReleaseAsset } from "./ReleaseAsset";
 import { File } from "./File";
 import { DigestMismatchError } from "./DigestMismatchError";
@@ -87,7 +87,7 @@ export class Verifier {
     await this.globalState.update(Verifier.requiredVersionDigestKey, {
       version,
       digest,
-    } as VersionDigest);
+    } as IVersionDigest);
   }
 
   private async verifyArchive(archive: File): Promise<void> {
@@ -136,7 +136,7 @@ export class Verifier {
   }
 
   private requiredExecutableDigestFromGlobalStore(): string | null {
-    const required = this.globalState.get<VersionDigest>(
+    const required = this.globalState.get<IVersionDigest>(
       Verifier.requiredVersionDigestKey
     );
 

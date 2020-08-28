@@ -3,7 +3,9 @@ import { config } from "./config";
 import { determinePlatform } from "./Platform";
 import GrypeExtension from "./GrypeExtension";
 
-export async function activate(context: vscode.ExtensionContext) {
+export async function activate(
+  context: vscode.ExtensionContext
+): Promise<void> {
   const extension = new GrypeExtension(context, config, determinePlatform());
 
   try {
@@ -16,4 +18,6 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 // this method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate(): void {
+  // implement
+}

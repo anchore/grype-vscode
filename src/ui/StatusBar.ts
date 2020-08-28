@@ -6,7 +6,7 @@ export default class StatusBar {
   private normalColor: string | vscode.ThemeColor | undefined;
 
   constructor() {
-    const priority: number = 1000;
+    const priority = 1000;
     this.statusBarItem = vscode.window.createStatusBarItem(
       vscode.StatusBarAlignment.Left,
       priority

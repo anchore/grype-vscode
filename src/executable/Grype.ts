@@ -1,25 +1,7 @@
 import { spawn } from "child_process";
 import fs = require("fs");
 import path = require("path");
-
-interface IGrypeReportElement {
-  vulnerability: IVulnerability;
-  "matched-by": Array<string>;
-  artifact: IArtifact;
-}
-
-interface IVulnerability {
-  id: string;
-  severity: string;
-  links: Array<string>;
-}
-
-interface IArtifact {
-  name: string;
-  version: string;
-  type: string;
-  "found-by": Array<string>;
-}
+import { IGrypeFinding } from "../IGrypeFinding";
 
 interface IProcessResult {
   stdout: string;
@@ -73,22 +55,19 @@ export class Grype {
     ];
   }
 
-  public async scan(directory: string): Promise<Array<IGrypeReportElement>> {
+  public async scan(directory: string): Promise<IGrypeFinding[]> {
     console.log("scanning...");
-    try {
-      await this.updateDb();
-      const result = await this.run(
-        this.executableFilePath,
-        `dir://${directory}`,
-        "-o",
-        "json",
-        "-v"
-      );
-      const grypeReport: Array<IGrypeReportElement> = JSON.parse(result.stdout);
-      return grypeReport;
-    } catch (err) {
-      throw err;
-    }
+
+    await this.updateDb();
+    const result = await this.run(
+      this.executableFilePath,
+      `dir://${directory}`,
+      "-o",
+      "json",
+      "-v"
+    );
+    const grypeReport: IGrypeFinding[] = JSON.parse(result.stdout);
+    return grypeReport;
   }
 
   private async run(cmd: string, ...args: string[]): Promise<IProcessResult> {
