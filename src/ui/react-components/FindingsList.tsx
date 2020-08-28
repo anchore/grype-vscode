@@ -13,10 +13,12 @@ export function FindingsList(props: IProps): JSX.Element {
       <Table.Header>
         <Table.Row>
           <Table.HeaderCell
-            sorted={column === "name" ? direction : undefined}
-            onClick={() => dispatch({ type: "CHANGE_SORT", column: "name" })}
+            sorted={column === "packageName" ? direction : undefined}
+            onClick={() =>
+              dispatch({ type: "CHANGE_SORT", column: "packageName" })
+            }
           >
-            Name
+            Package
           </Table.HeaderCell>
           <Table.HeaderCell
             sorted={column === "vulnerability" ? direction : undefined}
@@ -46,9 +48,12 @@ export function FindingsList(props: IProps): JSX.Element {
       </Table.Header>
       <Table.Body>
         {currentRows.map(
-          ({ name, vulnerability, severity, description }, index) => (
+          (
+            { packageName: packageName, vulnerability, severity, description },
+            index
+          ) => (
             <Table.Row key={index}>
-              <Table.Cell>{name}</Table.Cell>
+              <Table.Cell>{packageName}</Table.Cell>
               <Table.Cell>{tryHyperlinking(vulnerability)}</Table.Cell>
               <Table.Cell>{tryColoring(severity)}</Table.Cell>
               <Table.Cell>{description}</Table.Cell>
@@ -71,7 +76,7 @@ interface IState {
 }
 
 interface IRow {
-  name: string;
+  packageName: string; // note: "package" is a reserved word in strict mode, hence "packageName"
   vulnerability: string;
   severity: string;
   description: string;
@@ -83,12 +88,12 @@ interface IAction {
 }
 
 type Direction = "ascending" | "descending";
-type Column = "name" | "vulnerability" | "severity" | "description";
+type Column = "packageName" | "vulnerability" | "severity" | "description";
 
 function rows(findings: IGrypeFinding[]): IRow[] {
   return findings.map((f) => {
     const row: IRow = {
-      name: `${f.artifact.name} (${f.artifact.version})`,
+      packageName: `${f.artifact.name} (${f.artifact.version})`,
       vulnerability: f.vulnerability.id,
       severity: f.vulnerability.severity,
       description: f.vulnerability.description,
@@ -169,8 +174,8 @@ function sort(rows: IRow[], column: Column, direction: Direction): IRow[] {
     [
       (row) => {
         switch (column) {
-          case "name":
-            return row.name.toLowerCase();
+          case "packageName":
+            return row.packageName.toLowerCase();
           case "vulnerability":
             return row.vulnerability.toLowerCase();
           case "severity":
