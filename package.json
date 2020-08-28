@@ -29,41 +29,22 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
-    "colors": [
-      {
-        "id": "grype.error",
-        "description": "Status bar color when vulnerabilities are found.",
-        "defaults": {
-          "dark": "#e03207",
-          "light": "#af1400",
-          "highContrast": "#d60101"
-        }
-      }
-    ],
     "commands": [
       {
         "command": "extension.scanWorkspace",
-        "title": "Grype: Scan Workspace"
+        "title": "Grype: Scan Now"
       },
       {
-        "command": "extension.showVulnerabilityReport",
-        "title": "Grype: Show Vulnerability Report"
+        "command": "extension.openVulnerabilityReport",
+        "title": "Grype: Open Vulnerability Report"
       },
       {
-        "command": "extension.enableGrypeGlobally",
-        "title": "Grype: Enable auto scanning globally"
+        "command": "extension.enableAutomaticScanning",
+        "title": "Grype: Enable Automatic Scanning"
       },
       {
-        "command": "extension.disableGrypeGlobally",
-        "title": "Grype: Disable auto scanning globally"
-      },
-      {
-        "command": "extension.enableGrypeWorkspace",
-        "title": "Grype: Enable auto scanning for this workspace"
-      },
-      {
-        "command": "extension.disableGrypeWorkspace",
-        "title": "Grype: Disable auto scanning for this workspace"
+        "command": "extension.disableAutomaticScanning",
+        "title": "Grype: Disable Automatic Scanning"
       }
     ]
   },

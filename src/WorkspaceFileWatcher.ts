@@ -4,12 +4,12 @@ import { setTimeout } from "timers";
 export class WorkspaceFileWatcher {
   private watchers: Array<vscode.FileSystemWatcher> = [];
   private scheduled: boolean;
-  private readonly callback: () => Promise<void>;
+  private readonly scan: () => Promise<void>;
   private readonly patterns: Array<string>;
 
-  constructor(patterns: Array<string>, callback: () => Promise<void>) {
+  constructor(patterns: Array<string>, scan: () => Promise<void>) {
     this.scheduled = false;
-    this.callback = callback;
+    this.scan = scan;
     this.patterns = patterns;
   }
 
@@ -66,7 +66,7 @@ export class WorkspaceFileWatcher {
         // note: we should allow the callback to fully return before allowing
         // anything else to be scheduled
 
-        await this.callback();
+        await this.scan();
         this.scheduled = false;
       }, 1000);
     }

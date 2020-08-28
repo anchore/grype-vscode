@@ -7,7 +7,7 @@ import { Summary } from "./Summary";
 import { FindingsList } from "./FindingsList";
 
 export function App(): JSX.Element {
-  const [findings, setFindings] = React.useState<IGrypeFinding[]>([]);
+  const [findings, setFindings] = React.useState<IGrypeFinding[] | null>(null);
 
   React.useEffect(() => {
     window.addEventListener("message", (event) => {
@@ -21,12 +21,19 @@ export function App(): JSX.Element {
     });
   }, []);
 
-  return (
-    <div>
-      <Summary findings={findings} />
-      <FindingsList findings={findings} />
-    </div>
-  );
+  if (findings) {
+    const findingsList =
+      findings.length >= 1 ? <FindingsList findings={findings} /> : null;
+
+    return (
+      <div>
+        <Summary findings={findings} />
+        {findingsList}
+      </div>
+    );
+  }
+
+  return <div></div>;
 }
 
 render(<App />, document.getElementById("main"));

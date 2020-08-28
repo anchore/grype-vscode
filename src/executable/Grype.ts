@@ -2,6 +2,8 @@ import { spawn } from "child_process";
 import fs = require("fs");
 import path = require("path");
 import { IGrypeFinding } from "../IGrypeFinding";
+import { ExecutableNotFoundError } from "./ExecutableNotFoundError";
+import { ExitCodeNonZeroError } from "./ExitCodeNonZeroError";
 
 interface IProcessResult {
   stdout: string;
@@ -25,7 +27,8 @@ export class Grype {
     try {
       await this.run(this.executableFilePath, "db", "update", "-vv");
     } catch (err) {
-      console.error(err);
+      console.error(`unable to update grype db: ${err}`);
+      throw err;
     }
   }
 
@@ -77,6 +80,7 @@ export class Grype {
         GRYPE_DB_CACHE_DIR: this.dbPath,
         GRYPE_DB_AUTO_UPDATE: "0",
         GRYPE_CHECK_FOR_APP_UPDATE: "0",
+        GRYPE_LOG_STRUCTURED: "TRUE",
         PATH: process.env["PATH"],
         /* eslint-enable @typescript-eslint/naming-convention */
       },
@@ -89,14 +93,36 @@ export class Grype {
       let stderr = "";
       child.stdout?.on("data", (data) => (stdout += data.toString()));
       child.stderr?.on("data", (data) => (stderr += data.toString()));
-      child.on("exit", () => {
+      child.on("exit", (code) => {
+        if (code && code !== 0) {
+          const lastLine = (message: string) => {
+            const lines = message.split("\n");
+            const lastLine = lines[lines.length - 2];
+            return lastLine;
+          };
+
+          const err = JSON.parse(lastLine(stderr));
+          const message = err.msg;
+
+          reject(new ExitCodeNonZeroError(message, code));
+        }
+
         resolve({
           stdout,
           stderr,
         });
       });
 
-      child.on("error", reject);
+      child.on("error", (err) => {
+        console.error(`unable to execute grype: ${err.message}`);
+
+        const enoentRegex = new RegExp("^spawn .* ENOENT$");
+        if (enoentRegex.test(err.message)) {
+          reject(new ExecutableNotFoundError(err.message));
+        }
+
+        reject(err);
+      });
     });
   }
 }
