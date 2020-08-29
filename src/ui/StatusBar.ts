@@ -11,6 +11,7 @@ export default class StatusBar {
       vscode.StatusBarAlignment.Left,
       priority
     );
+    this.statusBarItem.command = "extension.showVulnerabilityReport";
     this.errorColor = new vscode.ThemeColor("grype.error");
     this.normalColor = this.statusBarItem.color;
   }

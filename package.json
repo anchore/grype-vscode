@@ -46,6 +46,10 @@
         "title": "Grype: Scan Workspace"
       },
       {
+        "command": "extension.showVulnerabilityReport",
+        "title": "Grype: Show Vulnerability Report"
+      },
+      {
         "command": "extension.enableGrypeGlobally",
         "title": "Grype: Enable auto scanning globally"
       },
