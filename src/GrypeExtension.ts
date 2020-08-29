@@ -9,17 +9,17 @@ import { Platform } from "./Platform";
 import { WorkspaceFileWatcher } from "./WorkspaceFileWatcher";
 import path = require("path");
 import fs = require("fs");
-import { DetailsView } from "./ui/DetailsView";
+import { VulnerabilityReportView } from "./ui/VulnerabilityReportView";
 
 export default class GrypeExtension {
   private readonly outputChannel: vscode.OutputChannel;
   private readonly context: vscode.ExtensionContext;
   private readonly statusBar: StatusBar;
   private readonly executableProvider: ExecutableProvider;
-  private readonly detailsView: DetailsView;
+  private readonly vulnerabilityReportView: VulnerabilityReportView;
   private grype: Grype | null = null;
   private watcher: WorkspaceFileWatcher | null = null;
-  private registeredCodeLenseProvider: vscode.Disposable | null = null;
+  private registeredCodeLensProvider: vscode.Disposable | null = null;
   private scanReport: IGrypeFinding[] | null = null;
 
   constructor(
@@ -32,7 +32,7 @@ export default class GrypeExtension {
     this.statusBar = new StatusBar();
     this.statusBar.hide();
     this.executableProvider = new ExecutableProvider(context, config, platform);
-    this.detailsView = new DetailsView(context);
+    this.vulnerabilityReportView = new VulnerabilityReportView(context);
   }
 
   public async activate(): Promise<void> {
@@ -91,17 +91,20 @@ export default class GrypeExtension {
         this.conditionallyStartWatchers();
       }),
 
-      vscode.commands.registerCommand("extension.showReport", () => {
-        if (this.scanReport) {
-          // TODO: Remove this whole try/catch block when we have popups in place (w/ "Details" button)
-          try {
-            this.detailsView.open();
-            this.detailsView.loadFindings(this.scanReport);
-          } catch (err) {
-            console.error(err);
+      vscode.commands.registerCommand(
+        "extension.showVulnerabilityReport",
+        () => {
+          if (this.scanReport) {
+            // TODO: Remove this whole try/catch block when we have popups in place (w/ "Details" button)
+            try {
+              this.vulnerabilityReportView.open();
+              this.vulnerabilityReportView.loadFindings(this.scanReport);
+            } catch (err) {
+              console.error(err);
+            }
           }
         }
-      }),
+      ),
 
       vscode.commands.registerCommand("extension.disableGrypeWorkspace", () => {
         this.isWorkspaceEnabled = false;
@@ -136,10 +139,10 @@ export default class GrypeExtension {
     }
   }
 
-  private registerCodeLenseProvider(results: IGrypeFinding[]): void {
-    if (this.registeredCodeLenseProvider !== null) {
+  private registerCodeLensProvider(results: IGrypeFinding[]): void {
+    if (this.registeredCodeLensProvider !== null) {
       // ensure any code lenses with old results are no longer used
-      this.registeredCodeLenseProvider.dispose();
+      this.registeredCodeLensProvider.dispose();
     }
 
     const docSelector = {
@@ -151,7 +154,7 @@ export default class GrypeExtension {
       new VulnerabilityCodeLensProvider(results)
     );
 
-    this.registeredCodeLenseProvider = disposable;
+    this.registeredCodeLensProvider = disposable;
 
     // use a subscription to ensure the provider is de-registered upon the extension being unloaded
     this.context.subscriptions.push(disposable);
@@ -180,7 +183,7 @@ export default class GrypeExtension {
       }
 
       // update all top-of-file lines for files that are in the scan results
-      this.registerCodeLenseProvider(this.scanReport);
+      this.registerCodeLensProvider(this.scanReport);
     }
   }
 }
