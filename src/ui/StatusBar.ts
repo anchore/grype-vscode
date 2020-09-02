@@ -2,39 +2,51 @@ import * as vscode from "vscode";
 
 export default class StatusBar {
   private statusBarItem: vscode.StatusBarItem;
-  private errorColor: vscode.ThemeColor;
-  private normalColor: string | vscode.ThemeColor | undefined;
+  private isAutomaticScanningEnabled: () => boolean;
 
-  constructor() {
+  constructor(isAutomaticScanningEnabled: () => boolean) {
     const priority = 1000;
     this.statusBarItem = vscode.window.createStatusBarItem(
       vscode.StatusBarAlignment.Left,
       priority
     );
-    this.statusBarItem.command = "extension.showVulnerabilityReport";
-    this.errorColor = new vscode.ThemeColor("grype.error");
-    this.normalColor = this.statusBarItem.color;
+    this.statusBarItem.command = "extension.launchStatusBarQuickPick";
+    this.statusBarItem.show();
+
+    this.isAutomaticScanningEnabled = isAutomaticScanningEnabled;
+    this.updateEnabledState();
   }
 
-  public hide(): void {
-    this.statusBarItem.hide();
+  public updateEnabledState(): void {
+    if (this.isAutomaticScanningEnabled()) {
+      this.statusBarItem.tooltip = "Grype Vulnerability Scanner";
+      this.statusBarItem.text = "$(ellipsis) Waiting for first scan";
+    } else {
+      this.statusBarItem.tooltip =
+        "Automatic scanning is disabled. Click to enable.";
+      this.statusBarItem.text = "$(plug) Disabled";
+    }
   }
 
   public showScanning(): void {
-    this.statusBarItem.color = this.normalColor;
-    this.statusBarItem.text = "$(question) Scanning...";
-    this.statusBarItem.show();
+    this.setTextIfEnabled("$(loading) Scanning...");
   }
 
   public showNoVulnerabilities(): void {
-    this.statusBarItem.color = this.normalColor;
-    this.statusBarItem.text = "$(check) No Vulnerabilities";
-    this.statusBarItem.show();
+    this.setTextIfEnabled("$(check) No Vulnerabilities");
   }
 
   public showVulnerabilitiesFound(num: number): void {
-    this.statusBarItem.color = this.errorColor;
-    this.statusBarItem.text = `$(alert) ${num} Vulnerabilities`;
-    this.statusBarItem.show();
+    this.setTextIfEnabled(`$(alert) ${num} Vulnerabilities`);
+  }
+
+  public showError(): void {
+    this.setTextIfEnabled("$(error) Unable to scan");
+  }
+
+  private setTextIfEnabled(text: string): void {
+    if (this.isAutomaticScanningEnabled()) {
+      this.statusBarItem.text = text;
+    }
   }
 }

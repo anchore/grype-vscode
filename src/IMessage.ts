@@ -1,4 +1,6 @@
 export interface IMessage<T> {
-  command: "update";
+  command: Command;
   payload: T;
 }
+
+type Command = "update";
