@@ -37,7 +37,8 @@ export default class StatusBar {
   }
 
   public showVulnerabilitiesFound(num: number): void {
-    this.setTextIfEnabled(`$(alert) ${num} Vulnerabilities`);
+    const noun = num === 1 ? "Vulnerability" : "Vulnerabilities";
+    this.setTextIfEnabled(`$(alert) ${num} ${noun}`);
   }
 
   public showError(): void {
