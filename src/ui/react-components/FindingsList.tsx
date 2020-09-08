@@ -96,7 +96,7 @@ function rows(findings: IGrypeFinding[]): IRow[] {
       packageName: `${f.artifact.name} (${f.artifact.version})`,
       vulnerability: f.vulnerability.id,
       severity: f.vulnerability.severity,
-      description: f.vulnerability.description,
+      description: `${f.vulnerability.description} Found in: ${f.artifact.locations[0]}`,
     };
 
     return row;
