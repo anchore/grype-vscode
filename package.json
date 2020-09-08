@@ -6,8 +6,14 @@
     "type": "git",
     "url": "https://github.com/anchore/grype-vscode.git"
   },
-  "description": "Scans your project for manifests to discover vulnerable libraries and artifacts.",
-  "version": "0.0.1",
+  "bugs": {
+    "url": "https://github.com/anchore/grype-vscode/issues"
+  },
+  "homepage": "https://toolbox.anchore.io/",
+  "icon": "images/icon.png",
+  "license": "Apache-2.0",
+  "description": "Scans your project for manifests to discover vulnerable libraries and artifacts",
+  "version": "0.1.0",
   "engines": {
     "vscode": "^1.48.0"
   },
@@ -82,6 +88,7 @@
     "mocha": "^8.0.1",
     "prettier": "2.0.5",
     "typescript": "^3.8.3",
+    "vsce": "^1.79.5",
     "vscode-test": "^1.4.0",
     "webpack": "^4.44.1",
     "webpack-cli": "^3.3.12"
