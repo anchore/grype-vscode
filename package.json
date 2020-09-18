@@ -1,7 +1,7 @@
 {
   "name": "grype-vscode",
-  "displayName": "grype-vscode",
-  "publisher": "anchore",
+  "displayName": "Grype",
+  "publisher": "anchoreinc",
   "repository": {
     "type": "git",
     "url": "https://github.com/anchore/grype-vscode.git"
@@ -13,9 +13,9 @@
   "icon": "images/icon.png",
   "license": "Apache-2.0",
   "description": "Scans your project for manifests to discover vulnerable libraries and artifacts",
-  "version": "0.1.0",
+  "version": "0.0.14",
   "engines": {
-    "vscode": "^1.48.0"
+    "vscode": "^1.49.0"
   },
   "categories": [
     "Linters",
@@ -63,34 +63,35 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run build && npm run lint",
     "test-unit": "echo 'modify when unit tests have been added' && exit 0",
-    "test-integration": "node ./out/test/runTest.js"
+    "test-integration": "node ./out/test/runTest.js",
+    "package": "vsce package --githubBranch main --out \"${STAGING_DIR:-..}/${VSIX_FILE:-grype-vscode.vsix}\""
   },
   "devDependencies": {
     "@types/follow-redirects": "^1.13.0",
     "@types/glob": "^7.1.3",
-    "@types/lodash": "^4.14.160",
+    "@types/lodash": "^4.14.161",
     "@types/mocha": "^8.0.0",
-    "@types/node": "^14.6.0",
-    "@types/react": "^16.9.47",
+    "@types/node": "^14.11.1",
+    "@types/react": "^16.9.49",
     "@types/react-dom": "^16.9.8",
     "@types/request": "^2.48.5",
     "@types/tar": "^4.0.3",
     "@types/tar-stream": "^2.1.0",
-    "@types/vscode": "^1.48.0",
-    "@typescript-eslint/eslint-plugin": "^3.8.0",
-    "@typescript-eslint/parser": "^3.8.0",
-    "css-loader": "^4.2.2",
-    "eslint": "^7.6.0",
+    "@types/vscode": "^1.49.0",
+    "@typescript-eslint/eslint-plugin": "^3.10.1",
+    "@typescript-eslint/parser": "^3.10.1",
+    "css-loader": "^4.3.0",
+    "eslint": "^7.9.0",
     "eslint-config-prettier": "^6.11.0",
     "eslint-plugin-react": "^7.20.6",
-    "file-loader": "^6.0.0",
+    "file-loader": "^6.1.0",
     "glob": "^7.1.6",
-    "mocha": "^8.0.1",
-    "prettier": "2.0.5",
+    "mocha": "^8.1.3",
+    "prettier": "^2.1.2",
     "typescript": "^3.8.3",
     "vsce": "^1.79.5",
     "vscode-test": "^1.4.0",
-    "webpack": "^4.44.1",
+    "webpack": "^4.44.2",
     "webpack-cli": "^3.3.12"
   },
   "dependencies": {

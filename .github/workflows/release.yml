@@ -1,0 +1,130 @@
+name: "Release"
+on:
+  push:
+    branches-ignore:
+      - "**"
+    tags:
+      - "v*"
+
+jobs:
+  wait-for-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Ensure tagged commit is on main
+        id: tag-on-main
+        run: |
+          echo "Tag: ${GITHUB_REF##*/}"
+          git fetch origin main
+          git merge-base --is-ancestor ${GITHUB_REF##*/} origin/main && echo "${GITHUB_REF##*/} is a commit on main!"
+
+      - name: Ensure tag matches package.json version field
+        id: tag-matches-package-json
+        run: |
+          echo "Tag: ${GITHUB_REF##*/}"
+          test "${GITHUB_REF##*/}" = "v$(jq --raw-output '.version' ./package.json)" && echo "tag matches package.json version field!"
+
+      - name: Check build results
+        uses: fountainhead/action-wait-for-check@v1.0.0
+        id: build
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: "build (12.x)"
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Check format-check results
+        uses: fountainhead/action-wait-for-check@v1.0.0
+        id: format-check
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: "format-check"
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Check lint results
+        uses: fountainhead/action-wait-for-check@v1.0.0
+        id: lint
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: "lint"
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Check unit-tests results
+        uses: fountainhead/action-wait-for-check@v1.0.0
+        id: unit-tests
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: "unit-tests"
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Quality gate
+        if: steps.build.outputs.conclusion != 'success' || steps.format-check.outputs.conclusion != 'success' || steps.lint.outputs.conclusion != 'success' || steps.unit-tests.outputs.conclusion != 'success'
+        run: |
+          echo "build status : ${{ steps.build.outputs.conclusion }}"
+          echo "format-check status : ${{ steps.format-check.outputs.conclusion }}"
+          echo "lint status : ${{ steps.lint.outputs.conclusion }}"
+          echo "unit-tests status : ${{ steps.unit-tests.outputs.conclusion }}"
+          false
+
+  release:
+    needs: [wait-for-checks]
+    runs-on: ubuntu-latest
+    env:
+      STAGING_DIR_PATH: /tmp/staging
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12.x
+
+      - name: Install vsce
+        run: npm install -g vsce
+
+      - name: Install project dependencies
+        run: npm install
+
+      - name: Create staging directory
+        run: mkdir -p "$STAGING_DIR_PATH"
+
+      - name: Create name for VSIX file
+        run: echo "::set-env name=VSIX_FILE::grype-vscode-${GITHUB_REF##*/}.vsix"
+
+      - name: Package extension
+        run: |
+          vsce package --githubBranch main --out "${STAGING_DIR_PATH:-..}/$VSIX_FILE"
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: artifacts
+          path: ${{ env.STAGING_DIR_PATH }}/${{ env.VSIX_FILE }}
+
+      - name: Create release
+        id: create-release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+
+      - name: Upload release artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create-release.outputs.upload_url }}
+          asset_path: ${{ env.STAGING_DIR_PATH }}/${{ env.VSIX_FILE }}
+          asset_name: ${{ env.VSIX_FILE }}
+          asset_content_type: application/zip
+
+      - name: Publish extension to the VS Code Marketplace
+        run:
+          | # The vsce command has unwanted behavior when run inside a git repo. (See https://code.visualstudio.com/api/working-with-extensions/publishing-extension#autoincrementing-the-extension-version)
+          cd ..
+          vsce publish --packagePath "$STAGING_DIR_PATH/$VSIX_FILE"
+        env:
+          VSCE_PAT: ${{ secrets.AZURE_MARKETPLACE_PAT }} # Note: PAT expires on 2021-09-20

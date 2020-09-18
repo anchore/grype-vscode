@@ -3,6 +3,7 @@
 .vscode-test/**
 out/test/**
 src/**
+!src/ui/webview-assets
 .gitignore
 .prettierignore
 vsc-extension-quickstart.md
