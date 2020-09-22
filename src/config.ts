@@ -1,7 +1,7 @@
 export const config: IConfig = {
   grype: {
     repositoryURL: "github.com/anchore/grype",
-    requiredVersion: "0.1.0-beta.6",
+    requiredVersion: "0.1.0-beta.8",
   },
 };
 

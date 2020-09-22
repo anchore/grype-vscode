@@ -37,6 +37,14 @@ export function FindingsList(props: IProps): JSX.Element {
             Severity
           </Table.HeaderCell>
           <Table.HeaderCell
+            sorted={column === "fixedInVersion" ? direction : undefined}
+            onClick={() =>
+              dispatch({ type: "CHANGE_SORT", column: "fixedInVersion" })
+            }
+          >
+            Fixed In Version
+          </Table.HeaderCell>
+          <Table.HeaderCell
             sorted={column === "description" ? direction : undefined}
             onClick={() =>
               dispatch({ type: "CHANGE_SORT", column: "description" })
@@ -49,13 +57,20 @@ export function FindingsList(props: IProps): JSX.Element {
       <Table.Body>
         {currentRows.map(
           (
-            { packageName: packageName, vulnerability, severity, description },
+            {
+              packageName: packageName,
+              vulnerability,
+              severity,
+              fixedInVersion,
+              description,
+            },
             index
           ) => (
             <Table.Row key={index}>
               <Table.Cell>{packageName}</Table.Cell>
               <Table.Cell>{tryHyperlinking(vulnerability)}</Table.Cell>
               <Table.Cell>{tryColoring(severity)}</Table.Cell>
+              <Table.Cell>{fixedInVersion}</Table.Cell>
               <Table.Cell>{description}</Table.Cell>
             </Table.Row>
           )
@@ -80,6 +95,7 @@ interface IRow {
   vulnerability: string;
   severity: string;
   description: string;
+  fixedInVersion: string;
 }
 
 interface IAction {
@@ -88,7 +104,12 @@ interface IAction {
 }
 
 type Direction = "ascending" | "descending";
-type Column = "packageName" | "vulnerability" | "severity" | "description";
+type Column =
+  | "packageName"
+  | "vulnerability"
+  | "severity"
+  | "fixedInVersion"
+  | "description";
 
 function rows(findings: IGrypeFinding[]): IRow[] {
   return findings.map((f) => {
@@ -96,6 +117,7 @@ function rows(findings: IGrypeFinding[]): IRow[] {
       packageName: `${f.artifact.name} (${f.artifact.version})`,
       vulnerability: f.vulnerability.id,
       severity: f.vulnerability.severity,
+      fixedInVersion: f.vulnerability.fixedInVersion || "",
       description: `${f.vulnerability.description} Found in: ${f.artifact.locations[0]}`,
     };
 
@@ -180,6 +202,8 @@ function sort(rows: IRow[], column: Column, direction: Direction): IRow[] {
             return row.vulnerability.toLowerCase();
           case "severity":
             return severityNumber(row.severity);
+          case "fixedInVersion":
+            return row.fixedInVersion?.toLowerCase();
           case "description":
             return row.description.toLowerCase();
         }
