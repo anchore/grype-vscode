@@ -3,4 +3,4 @@ export interface IMessage<T> {
   payload: T;
 }
 
-type Command = "update";
+type Command = "update" | "openFile";
