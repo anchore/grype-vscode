@@ -6,7 +6,7 @@ import _ = require("lodash");
 export function FindingsList(props: IProps): JSX.Element {
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const { column, direction } = state;
-  const currentRows = state.sort(rows(props.findings));
+  const currentRows = state.sort(rows(props.findings, props.openFile));
 
   return (
     <Table sortable>
@@ -82,6 +82,7 @@ export function FindingsList(props: IProps): JSX.Element {
 
 interface IProps {
   findings: IGrypeFinding[];
+  openFile(uri: string): void;
 }
 
 interface IState {
@@ -94,8 +95,8 @@ interface IRow {
   packageName: string; // note: "package" is a reserved word in strict mode, hence "packageName"
   vulnerability: string;
   severity: string;
-  description: string;
   fixedInVersion: string;
+  description: JSX.Element;
 }
 
 interface IAction {
@@ -111,18 +112,37 @@ type Column =
   | "fixedInVersion"
   | "description";
 
-function rows(findings: IGrypeFinding[]): IRow[] {
+function rows(
+  findings: IGrypeFinding[],
+  openFile: (uri: string) => void
+): IRow[] {
   return findings.map((f) => {
     const row: IRow = {
       packageName: `${f.artifact.name} (${f.artifact.version})`,
       vulnerability: f.vulnerability.id,
       severity: f.vulnerability.severity,
       fixedInVersion: f.vulnerability.fixedInVersion || "",
-      description: `${f.vulnerability.description} Found in: ${f.artifact.locations[0]}`,
+      description: (
+        <span>
+          {f.vulnerability.description} Found in:&nbsp;
+          {linkLocation(f.artifact.locations[0], openFile)}
+        </span>
+      ),
     };
 
     return row;
   });
+}
+
+function linkLocation(
+  location: string,
+  openFile: (uri: string) => void
+): JSX.Element {
+  return (
+    <a href={"#"} onClick={() => openFile(location)}>
+      {location}
+    </a>
+  );
 }
 
 function tryColoring(severity: string): JSX.Element {
@@ -205,7 +225,7 @@ function sort(rows: IRow[], column: Column, direction: Direction): IRow[] {
           case "fixedInVersion":
             return row.fixedInVersion?.toLowerCase();
           case "description":
-            return row.description.toLowerCase();
+            return row.description;
         }
       },
     ],
