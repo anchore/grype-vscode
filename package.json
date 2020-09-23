@@ -13,7 +13,7 @@
   "icon": "images/icon.png",
   "license": "Apache-2.0",
   "description": "Scans your project for manifests to discover vulnerable libraries and artifacts",
-  "version": "0.0.14",
+  "version": "0.0.0",
   "engines": {
     "vscode": "^1.49.0"
   },
