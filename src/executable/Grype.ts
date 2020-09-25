@@ -69,7 +69,7 @@ export class Grype {
       "json",
       "-v"
     );
-    const grypeReport: IGrypeFinding[] = JSON.parse(result.stdout);
+    const grypeReport: IGrypeFinding[] = JSON.parse(result.stdout).matches;
     return grypeReport;
   }
 
