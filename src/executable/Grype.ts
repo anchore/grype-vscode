@@ -64,7 +64,7 @@ export class Grype {
     await this.updateDb();
     const result = await this.run(
       this.executableFilePath,
-      `dir://${directory}`,
+      `dir:${directory}`,
       "-o",
       "json",
       "-v"
