@@ -16,6 +16,7 @@ import { ExitCodeNonZeroError } from "./executable/ExitCodeNonZeroError";
 import { StatusBarQuickPick } from "./ui/StatusBarQuickPick";
 import { NoWorkspaceFolderError } from "./NoWorkspaceFolderError";
 import { MultipleWorkspaceFoldersError } from "./MultipleWorkspaceFoldersError";
+import { RootDirectoryScanError } from "./executable/RootDirectoryScanError";
 
 export default class GrypeExtension {
   private static readonly isAutomaticScanningEnabledKey =
@@ -80,6 +81,17 @@ export default class GrypeExtension {
 
   private get areScanResultsAvailable(): boolean {
     return this.scanReport ? true : false;
+  }
+
+  private get directory(): string {
+    const { workspace } = vscode;
+
+    if (workspace.workspaceFolders && workspace.workspaceFolders.length === 1) {
+      const workspaceFolder = workspace.workspaceFolders[0];
+      return workspaceFolder.uri.fsPath;
+    }
+
+    return "";
   }
 
   private async initializeWatcher(): Promise<void> {
@@ -319,19 +331,9 @@ export default class GrypeExtension {
     }
   }
 
-  private get directory(): string {
-    const { workspace } = vscode;
-
-    if (workspace.workspaceFolders && workspace.workspaceFolders.length === 1) {
-      const workspaceFolder = workspace.workspaceFolders[0];
-      return workspaceFolder.uri.fsPath;
-    }
-
-    return "";
-  }
-
   private handleScanError(err: Error): void {
     this.statusBar.showError();
+    console.error(err.message);
 
     if (err instanceof ExecutableNotFoundError) {
       vscode.window.showErrorMessage(
@@ -346,6 +348,11 @@ export default class GrypeExtension {
         `Grype exited with an error: ${err.message}`
       );
 
+      return;
+    }
+
+    if (err instanceof RootDirectoryScanError) {
+      // No need to show an error message, this is clearly an unsupported scenario.
       return;
     }
 
