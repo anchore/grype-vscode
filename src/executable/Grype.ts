@@ -59,7 +59,7 @@ export class Grype {
   }
 
   public async scan(directory: string): Promise<IGrypeFinding[]> {
-    console.log("scanning...");
+    console.log(`scanning ${directory}...`);
 
     await this.updateDb();
     const result = await this.run(
