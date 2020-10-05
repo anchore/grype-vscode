@@ -4,6 +4,7 @@ import path = require("path");
 import { IGrypeFinding } from "../IGrypeFinding";
 import { ExecutableNotFoundError } from "./ExecutableNotFoundError";
 import { ExitCodeNonZeroError } from "./ExitCodeNonZeroError";
+import { RootDirectoryScanError } from "./RootDirectoryScanError";
 
 interface IProcessResult {
   stdout: string;
@@ -59,7 +60,11 @@ export class Grype {
   }
 
   public async scan(directory: string): Promise<IGrypeFinding[]> {
-    console.log("scanning...");
+    if (path.resolve(directory) === "/") {
+      throw new RootDirectoryScanError();
+    }
+
+    console.log(`scanning ${directory}...`);
 
     await this.updateDb();
     const result = await this.run(
