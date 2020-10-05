@@ -2,11 +2,12 @@ import React = require("react");
 import { IGrypeFinding } from "../../IGrypeFinding";
 import { Table } from "semantic-ui-react";
 import _ = require("lodash");
+import { Description } from "./Description";
 
 export function FindingsList(props: IProps): JSX.Element {
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const { column, direction } = state;
-  const currentRows = state.sort(rows(props.findings, props.openFile));
+  const currentRows = state.sort(rows(props.findings));
 
   return (
     <Table sortable>
@@ -58,7 +59,7 @@ export function FindingsList(props: IProps): JSX.Element {
         {currentRows.map(
           (
             {
-              packageName: packageName,
+              packageName,
               vulnerability,
               severity,
               fixedInVersion,
@@ -71,7 +72,13 @@ export function FindingsList(props: IProps): JSX.Element {
               <Table.Cell>{tryHyperlinking(vulnerability)}</Table.Cell>
               <Table.Cell>{tryColoring(severity)}</Table.Cell>
               <Table.Cell>{fixedInVersion}</Table.Cell>
-              <Table.Cell>{description}</Table.Cell>
+              <Table.Cell>
+                <Description
+                  text={description.text}
+                  location={description.location}
+                  openFile={props.openFile}
+                />
+              </Table.Cell>
             </Table.Row>
           )
         )}
@@ -96,7 +103,12 @@ interface IRow {
   vulnerability: string;
   severity: string;
   fixedInVersion: string;
-  description: JSX.Element;
+  description: IDescription;
+}
+
+interface IDescription {
+  text: string;
+  location: string;
 }
 
 interface IAction {
@@ -112,37 +124,21 @@ type Column =
   | "fixedInVersion"
   | "description";
 
-function rows(
-  findings: IGrypeFinding[],
-  openFile: (uri: string) => void
-): IRow[] {
+function rows(findings: IGrypeFinding[]): IRow[] {
   return findings.map((f) => {
     const row: IRow = {
       packageName: `${f.artifact.name} (${f.artifact.version})`,
       vulnerability: f.vulnerability.id,
       severity: f.vulnerability.severity,
       fixedInVersion: f.vulnerability.fixedInVersion || "",
-      description: (
-        <span>
-          {f.vulnerability.description} Found in:&nbsp;
-          {linkLocation(f.artifact.locations[0], openFile)}
-        </span>
-      ),
+      description: {
+        text: f.vulnerability.description,
+        location: f.artifact.locations[0],
+      },
     };
 
     return row;
   });
-}
-
-function linkLocation(
-  location: string,
-  openFile: (uri: string) => void
-): JSX.Element {
-  return (
-    <a href={"#"} onClick={() => openFile(location)}>
-      {location}
-    </a>
-  );
 }
 
 function tryColoring(severity: string): JSX.Element {
@@ -225,7 +221,7 @@ function sort(rows: IRow[], column: Column, direction: Direction): IRow[] {
           case "fixedInVersion":
             return row.fixedInVersion?.toLowerCase();
           case "description":
-            return row.description;
+            return row.description.text.toLowerCase();
         }
       },
     ],
