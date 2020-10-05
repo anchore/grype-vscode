@@ -1,3 +1,10 @@
+## v0.1.1 - October 5, 2020
+
+### Fixed
+
+- Bug: Scanning the root directory is allowed ([#37](https://github.com/anchore/grype-vscode/issues/37))
+- Bug: Sort by description in vulnerability report is not working ([#39](https://github.com/anchore/grype-vscode/issues/39))
+
 ## v0.1.0 - September 29, 2020
 
 ### Added
