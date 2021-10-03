@@ -1,6 +1,10 @@
 # Grype for Visual Studio Code
 
-The Grype extension makes it easy to know when your project is using dependencies that have known security vulnerabilities.
+[![GitHub release](https://img.shields.io/github/release/anchore/grype-vscode.svg)](https://github.com/anchore/grype-vscode/releases/latest)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/anchore/grype-vscode/blob/main/LICENSE)
+[![Slack Invite](https://img.shields.io/badge/Slack-Join-blue?logo=slack)](https://anchore.com/slack)
+
+The Grype extension for Visual Studio Code makes it easy to know when your project is using dependencies that have known security vulnerabilities.
 
 ![Grype Extension Demo](https://user-images.githubusercontent.com/5199289/92470955-29b75500-f1a5-11ea-82f6-941c9a6934f8.gif)
 
