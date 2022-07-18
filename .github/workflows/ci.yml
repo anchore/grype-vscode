@@ -1,5 +1,14 @@
 name: CI
-on: [push]
+on: # rebuild any PRs and main branch changes
+  pull_request:
+    branches: [main]
+  push:
+    branches:
+      - main
+  release:
+    types:
+      - created
+      - edited
 
 jobs:
   build:
