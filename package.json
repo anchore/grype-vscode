@@ -59,6 +59,7 @@
     "build": "tsc -p ./ --noEmitOnError && npm run bundle",
     "bundle": "webpack",
     "lint": "eslint src --ext ts --max-warnings 0",
+    "format": "prettier -w .",
     "format-check": "prettier --check .",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run build && npm run lint",
