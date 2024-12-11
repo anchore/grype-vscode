@@ -98,7 +98,7 @@ jobs:
         run: |
           vsce package --githubBranch main --out "${STAGING_DIR_PATH:-..}/$VSIX_FILE"
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: artifacts
           path: ${{ env.STAGING_DIR_PATH }}/${{ env.VSIX_FILE }}
